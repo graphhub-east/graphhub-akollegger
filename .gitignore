@@ -1,0 +1,7 @@
+github.sbt
+lib_managed/
+.shell_history
+.idea/
+.idea_modules/
+target/
+*.graphdb
