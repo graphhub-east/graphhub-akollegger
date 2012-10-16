@@ -1,6 +1,6 @@
 package org.neo4j.contrib.github.importer
 
-import org.eclipse.egit.github.core.User
+import org.eclipse.egit.github.core.{Repository, User}
 import java.io.PrintStream
 import org.neo4j.graphdb.{DynamicRelationshipType, Transaction, Node, GraphDatabaseService}
 
@@ -11,6 +11,7 @@ import org.neo4j.graphdb.{DynamicRelationshipType, Transaction, Node, GraphDatab
 class Neo4jImportVisitor(val graphdb:GraphDatabaseService) extends GitHubVisitor {
 
   val FOLLOWS = DynamicRelationshipType.withName("FOLLOWS")
+  val OWNS = DynamicRelationshipType.withName("OWNS")
 
   val userIndex = graphdb.index().forNodes("user")
 
@@ -28,6 +29,17 @@ class Neo4jImportVisitor(val graphdb:GraphDatabaseService) extends GitHubVisitor
 
   def visit(u: User) {
     convert(u).foreach(n => index(u, n))
+  }
+
+
+  def visit(r: Repository) {
+    convert(r).foreach(n =>
+      lookup(r.getOwner) match {
+        case Some(owner:Node) => owner.createRelationshipTo(n, OWNS)
+        case _ => ;
+      }
+    )
+    r.getOwner
   }
 
   def follows(follower:User, follows:User) {
@@ -58,7 +70,26 @@ class Neo4jImportVisitor(val graphdb:GraphDatabaseService) extends GitHubVisitor
       possibleNode = Some(node)
     } catch {
       case e =>
-        Console.err.println("Node creation failed, because: " + e)
+        Console.err.println("User node creation failed, because: " + e)
+    }
+    possibleNode
+  }
+
+  def convert(r:Repository):Option[Node] = {
+    var possibleNode:Option[Node] = None
+    try {
+      val node = graphdb.createNode()
+      List("name" -> r.getName,
+        "description" -> r.getDescription,
+        "id" -> r.getId,
+        "git_url" -> r.getGitUrl
+        ).foreach( p =>
+          if (p._2 != null) node.setProperty(p._1, p._2)
+      )
+      possibleNode = Some(node)
+    } catch {
+      case e =>
+        Console.err.println("Repository node creation failed, because: " + e)
     }
     possibleNode
   }

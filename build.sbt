@@ -15,15 +15,15 @@ libraryDependencies ++= Seq(
 // append several options to the list of options passed to the Java compiler
 javacOptions ++= Seq("-source", "1.6", "-target", "1.6")
 
-//testOptions in Test += Tests.Argument("github.user", "foo")
 testOptions in Test <+= (githubUser, githubPassword) map {
     (u,p) => Tests.Argument("github.user", u, "github.password", p)
     }
 
 parallelExecution in Test := false
 
-fork in test := true
+fork := true
 
 retrieveManaged := true
 
+offline := true
 

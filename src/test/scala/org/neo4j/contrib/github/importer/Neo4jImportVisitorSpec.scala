@@ -11,11 +11,12 @@ import org.neo4j.kernel.impl.util.FileUtils
 
 class Neo4jImportVisitorSpec(args:Arguments) extends Specification {
 
-  val graphdbLocation = "test.graphdb"
-  val graphdb = new EmbeddedGraphDatabase(graphdbLocation)
-  val github = new GitHubClient()
   val username = args.commandLine.value("github.user")
   val password = args.commandLine.value("github.password")
+
+  val graphdbLocation = username+".graphdb"
+  val graphdb = new EmbeddedGraphDatabase(graphdbLocation)
+  val github = new GitHubClient()
   github.setCredentials(username.get, password.get)
 
 
