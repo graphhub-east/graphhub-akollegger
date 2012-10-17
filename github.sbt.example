@@ -1,0 +1,3 @@
+githubUser := "foo"
+
+githubPassword := "bar"
