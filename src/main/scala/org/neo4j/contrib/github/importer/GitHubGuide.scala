@@ -3,8 +3,8 @@ package org.neo4j.contrib.github.importer
 import scala.collection.JavaConversions._
 
 import org.eclipse.egit.github.core.client.GitHubClient
-import org.eclipse.egit.github.core.service.{RepositoryService, UserService}
-import org.eclipse.egit.github.core.{Repository, User}
+import org.eclipse.egit.github.core.service.{OrganizationService, RepositoryService, UserService}
+import org.eclipse.egit.github.core.{Contributor, Repository, User}
 import collection.immutable.Queue
 import org.neo4j.kernel.EmbeddedGraphDatabase
 
@@ -29,12 +29,14 @@ class GitHubGuide(github:GitHubClient, maxDepth:Int = 3) {
 
   val users = new UserService(github)
   val repos = new RepositoryService(github)
+  val orgs = new OrganizationService(github)
 
   val visitedUsers = collection.mutable.BitSet()
   val visitedRepos = collection.mutable.HashSet()
 
   val userQ = collection.mutable.Queue[User]()
   val followQ = collection.mutable.Queue[(User,User)]()
+  val contribQ = collection.mutable.Queue[(Contributor,Repository)]()
 
   def guide(visitor:GitHubVisitor) {
     userQ.enqueue(users.getUser)
@@ -61,7 +63,21 @@ class GitHubGuide(github:GitHubClient, maxDepth:Int = 3) {
       }
       tourFollowers(visitor)
       for (repo <- repos.getRepositories(user.getLogin)) {
-          visitor.visit(repo)
+        visitor.visit(repo)
+        /** egit github lib is out of date. no such thing as contributors
+        for ( contrib <- repos.getContributors(repo, false)) {
+          if (visited(contrib)) {
+            contribQ.enqueue((contrib, repo))
+          }
+        }
+        */
+      }
+//      tourContributors(visitor)
+      for (org <- orgs.getOrganizations(user.getLogin)) {
+        if (!visited(org)) {
+          visitor.visit(org)
+        }
+        visitor.memberOf(user, org)
       }
       visitedUserDepth += 1
     }
@@ -75,8 +91,20 @@ class GitHubGuide(github:GitHubClient, maxDepth:Int = 3) {
     )
   }
 
+  def tourContributors(visitor:GitHubVisitor) {
+    contribQ.dequeueAll( possibleContrib =>
+      visited(possibleContrib._1)
+    ).foreach( readyContrib =>
+      visitor.contributes(readyContrib._1, readyContrib._2)
+    )
+  }
+
   def visited(user:User) = {
     visitedUsers.contains(user.getId)
+  }
+
+  def visited(contrib:Contributor) = {
+    visitedUsers.contains(contrib.getId)
   }
 
   def shouldVisit(user:User) = {

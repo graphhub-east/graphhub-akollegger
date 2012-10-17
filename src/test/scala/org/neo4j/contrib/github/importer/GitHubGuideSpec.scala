@@ -25,6 +25,8 @@ github.setCredentials(username.get, password.get)
 
       baos.toString must contain("(akollegger)-[:FOLLOWS]->(jakewins)")
 
+//      Console.out.println(baos.toString)
+
     }
 
   }

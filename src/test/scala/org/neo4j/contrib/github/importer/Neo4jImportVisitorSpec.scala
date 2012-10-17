@@ -14,7 +14,7 @@ class Neo4jImportVisitorSpec(args:Arguments) extends Specification {
   val username = args.commandLine.value("github.user")
   val password = args.commandLine.value("github.password")
 
-  val graphdbLocation = username+".graphdb"
+  val graphdbLocation = username.get+".graphdb"
   val graphdb = new EmbeddedGraphDatabase(graphdbLocation)
   val github = new GitHubClient()
   github.setCredentials(username.get, password.get)
@@ -24,7 +24,7 @@ class Neo4jImportVisitorSpec(args:Arguments) extends Specification {
     "index imported users" in {
       val login = "akollegger"
       val neo4jVisitor = new Neo4jImportVisitor(graphdb)
-      GitHubGuide(github,1).guide(neo4jVisitor)
+      GitHubGuide(github,3).guide(neo4jVisitor)
       val akollegger = neo4jVisitor.userIndex.get("login", login).getSingle
       akollegger.getProperty("login").asInstanceOf[String] mustEqual login
     }
