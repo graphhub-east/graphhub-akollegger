@@ -22,11 +22,11 @@ class Neo4jImportVisitorSpec(args:Arguments) extends Specification {
 
   "The Neo4jImportVisitor" should {
     "index imported users" in {
-      val login = "akollegger"
+      val login = username.get
       val neo4jVisitor = new Neo4jImportVisitor(graphdb)
       GitHubGuide(github,3).guide(neo4jVisitor)
-      val akollegger = neo4jVisitor.userIndex.get("login", login).getSingle
-      akollegger.getProperty("login").asInstanceOf[String] mustEqual login
+      val foundUser = neo4jVisitor.userIndex.get("login", login).getSingle
+      foundUser.getProperty("login").asInstanceOf[String] mustEqual login
     }
 
   }
